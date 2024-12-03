@@ -1,21 +1,12 @@
 package com.study.NIHo.util.exception;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@Setter
-@NoArgsConstructor
+@RequiredArgsConstructor
 public class UserException extends RuntimeException {
 
-    private HttpStatus status;
-    private String message;
+    private final UserExceptionResult userExceptionResult;
 
-    public UserException(String message, HttpStatus status) {
-        super(message);
-        this.message = message;
-        this.status = status;
-    }
 }
