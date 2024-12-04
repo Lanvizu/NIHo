@@ -1,6 +1,6 @@
 package com.study.NIHo.api.user.application;
 
-import com.study.NIHo.api.user.application.dto.user.response.UserGetResponseDTO;
+import com.study.NIHo.api.user.dto.response.UserGetResponseDTO;
 
 public interface UserGetService {
 
@@ -11,4 +11,12 @@ public interface UserGetService {
      * @return 사용자 정보 UserGetResponseDTO
      */
     UserGetResponseDTO getUserById(final long id);
+
+    /**
+     * 사용자 email를 이용해 사용자 정보 조회
+     *
+     * @param email 사용자 email
+     * @return 사용자 정보 UserGetResponseDTO
+     */
+    UserGetResponseDTO getUserByEmail(final String email);
 }
