@@ -2,22 +2,31 @@ package com.study.NIHo.domain.user;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.study.NIHo.api.user.dto.request.UserAddRequestDTO;
 import com.study.NIHo.domain.BaseTimeEntity;
+import com.study.NIHo.domain.user.enums.UserRole;
+import com.study.NIHo.domain.user.enums.UserStatus;
+import com.study.NIHo.domain.user.value.LoginInfo;
+import com.study.NIHo.domain.user.value.StatusInfo;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
+@Builder
 @Table(name = "user")
-@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+//@SQLRestriction("del_yn = false")
 public class User extends BaseTimeEntity {
 
     @Id
@@ -25,24 +34,34 @@ public class User extends BaseTimeEntity {
     @Column(name = "user_id")
     private Long id;
 
-    @Column(unique = true)
-    private String email;
+    @Embedded
+    private LoginInfo loginInfo;
+
+    @Embedded
+    private StatusInfo statusInfo;
 
     private String username;
-    private String password;
 
-    @Enumerated(EnumType.STRING)
-    private UserLevel userLevel;
+//    private boolean delYn = Boolean.FALSE;
 
-    @Enumerated(EnumType.STRING)
-    private UserStatus userStatus;
+    public static User of(UserAddRequestDTO dto) {
 
-    @Builder
-    public User(String username, String email, String password) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.userLevel = UserLevel.USER;
-        this.userStatus = UserStatus.NORMAL;
+        // Login Info
+        LoginInfo inputLoginInfo = LoginInfo.builder()
+                .email(dto.getEmail())
+                .password(dto.getPassword())
+                .build();
+
+        // status Info
+        StatusInfo inputStatusInfo = StatusInfo.builder()
+                .userStatus(UserStatus.NORMAL)
+                .userRole(UserRole.USER)
+                .build();
+
+        return User.builder()
+                .username(dto.getUsername())
+                .loginInfo(inputLoginInfo)
+                .statusInfo(inputStatusInfo)
+                .build();
     }
 }
