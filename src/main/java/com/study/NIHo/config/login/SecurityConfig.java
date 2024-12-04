@@ -3,7 +3,7 @@ package com.study.NIHo.config.login;
 import com.study.NIHo.config.login.security.filter.JwtAuthFilter;
 import com.study.NIHo.config.login.security.handler.CustomAccessDeniedHandler;
 import com.study.NIHo.config.login.security.handler.CustomAuthenticationEntryPointHandler;
-import com.study.NIHo.domain.user.UserRole;
+import com.study.NIHo.domain.user.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
