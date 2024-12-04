@@ -1,7 +1,6 @@
 package com.study.NIHo.config.login.security.filter;
 
 import com.study.NIHo.api.user.application.UserGetService;
-import com.study.NIHo.api.user.application.dto.user.response.UserGetResponseDTO;
 import com.study.NIHo.config.login.security.provide.JwtProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -53,10 +52,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      * @return 사용자 UsernamePasswordAuthenticationToken
      */
     private UsernamePasswordAuthenticationToken getUserAuth(String username) {
-        UserGetResponseDTO user = userGetService.getUserById(Long.parseLong(username));
+        var userInfo = userGetService.getUserById(Long.parseLong(username));
 
-        return new UsernamePasswordAuthenticationToken(user.userid(), user.password(),
-                Collections.singleton(new SimpleGrantedAuthority(user.userRole().name())));
+        return new UsernamePasswordAuthenticationToken(userInfo.id(), userInfo.password(),
+                Collections.singleton(new SimpleGrantedAuthority(userInfo.userRole().name())));
     }
 
 }
