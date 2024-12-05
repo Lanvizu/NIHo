@@ -1,7 +1,7 @@
-package com.study.NIHo.domain.user.value;
+package com.study.NIHo.api.user.domain.entity.value;
 
-import com.study.NIHo.domain.user.enums.UserRole;
-import com.study.NIHo.domain.user.enums.UserStatus;
+import com.study.NIHo.api.user.enums.UserRole;
+import com.study.NIHo.api.user.enums.UserStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;

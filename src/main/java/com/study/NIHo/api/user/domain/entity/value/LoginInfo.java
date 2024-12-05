@@ -1,4 +1,4 @@
-package com.study.NIHo.domain.user.value;
+package com.study.NIHo.api.user.domain.entity.value;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

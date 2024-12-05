@@ -2,7 +2,7 @@ package com.study.NIHo.api.user.application.impl;
 
 import com.study.NIHo.api.user.dto.response.UserGetResponseDTO;
 import com.study.NIHo.util.exception.UserExceptionResult;
-import com.study.NIHo.repository.UserRepository;
+import com.study.NIHo.api.user.domain.repository.UserRepository;
 import com.study.NIHo.api.user.application.UserGetService;
 import com.study.NIHo.util.exception.UserException;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.study.NIHo.domain.user.enums;
+package com.study.NIHo.api.user.enums;
 
 import lombok.Getter;
 

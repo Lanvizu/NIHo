@@ -2,8 +2,8 @@ package com.study.NIHo.api.user.application.impl;
 
 import com.study.NIHo.api.user.application.UserAddService;
 import com.study.NIHo.api.user.dto.request.UserAddRequestDTO;
-import com.study.NIHo.domain.user.User;
-import com.study.NIHo.repository.UserRepository;
+import com.study.NIHo.api.user.domain.entity.User;
+import com.study.NIHo.api.user.domain.repository.UserRepository;
 import com.study.NIHo.util.exception.UserException;
 import com.study.NIHo.util.exception.UserExceptionResult;
 import java.util.Optional;

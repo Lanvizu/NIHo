@@ -1,8 +1,8 @@
 package com.study.NIHo.api.user.dto.response;
 
-import com.study.NIHo.domain.user.User;
-import com.study.NIHo.domain.user.enums.UserRole;
-import com.study.NIHo.domain.user.enums.UserStatus;
+import com.study.NIHo.api.user.domain.entity.User;
+import com.study.NIHo.api.user.enums.UserRole;
+import com.study.NIHo.api.user.enums.UserStatus;
 import lombok.Builder;
 
 @Builder
