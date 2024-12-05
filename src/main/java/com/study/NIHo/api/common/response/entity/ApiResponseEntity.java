@@ -3,6 +3,7 @@ package com.study.NIHo.api.common.response.entity;
 import com.study.NIHo.api.common.response.enums.ResponseEnum;
 import lombok.Builder;
 import lombok.Getter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
 @Getter
@@ -79,5 +80,14 @@ public class ApiResponseEntity<T extends Object> {
                         .data(data)
                         .build()
         );
+    }
+
+    public static <T> ResponseEntity<ApiResponseEntity> successResponseEntityWithHeaders(T data, HttpHeaders headers) {
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(ApiResponseEntity.<T>builder()
+                        .data(data)
+                        .msg("요청 성공")
+                        .build());
     }
 }
