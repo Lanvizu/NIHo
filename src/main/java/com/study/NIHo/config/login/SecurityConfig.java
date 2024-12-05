@@ -3,7 +3,7 @@ package com.study.NIHo.config.login;
 import com.study.NIHo.config.login.security.filter.JwtAuthFilter;
 import com.study.NIHo.config.login.security.handler.CustomAccessDeniedHandler;
 import com.study.NIHo.config.login.security.handler.CustomAuthenticationEntryPointHandler;
-import com.study.NIHo.domain.user.enums.UserRole;
+import com.study.NIHo.api.user.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -56,7 +56,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(permitAllWhiteList).permitAll()
                 // 사용자 삭제는 관리자 권한만 가능
-                .requestMatchers(HttpMethod.DELETE, "/user").hasRole(UserRole.ADMIN.getRole())
+                .requestMatchers(HttpMethod.DELETE, "/user").hasRole(UserRole.ROLE_ADMIN.getRole())
                 // 그 외 요청 체크
                 .anyRequest().authenticated()
         );
