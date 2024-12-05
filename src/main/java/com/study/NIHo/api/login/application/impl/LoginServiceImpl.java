@@ -11,6 +11,7 @@ import com.study.NIHo.api.user.dto.response.UserGetResponseDTO;
 import com.study.NIHo.config.login.security.provide.JwtProvider;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,8 +35,8 @@ public class LoginServiceImpl implements LoginService {
         if(!bCryptPasswordEncoder.matches(loginRequestDTO.getPassword(), userInfo.password()))
             throw new LoginException(LoginExceptionResult.NOT_CORRECT);
 
-        // jwt 토큰 생성
-        String accessToken = jwtProvider.generateAccessToken(userInfo.id());
+        // jwt 토큰 생성 및 쿠키 설정
+        ResponseCookie accessTokenCookie = jwtProvider.generateAccessTokenCookie(String.valueOf(userInfo.id()));
 
         // 기존에 가지고 있는 사용자의 refresh token 제거
         RefreshToken.removeUserRefreshToken(userInfo.id());
@@ -45,9 +46,8 @@ public class LoginServiceImpl implements LoginService {
         RefreshToken.putRefreshToken(refreshToken, userInfo.id());
 
         return LoginResponseDTO.builder()
-                .accessToken(accessToken)
+                .accessTokenCookie(accessTokenCookie)
                 .refreshToken(refreshToken)
                 .build();
     }
-
 }
