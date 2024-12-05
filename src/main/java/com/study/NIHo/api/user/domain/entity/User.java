@@ -1,13 +1,12 @@
-package com.study.NIHo.domain.user;
+package com.study.NIHo.api.user.domain.entity;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 import com.study.NIHo.api.user.dto.request.UserAddRequestDTO;
 import com.study.NIHo.domain.BaseTimeEntity;
-import com.study.NIHo.domain.user.enums.UserRole;
-import com.study.NIHo.domain.user.enums.UserStatus;
-import com.study.NIHo.domain.user.value.LoginInfo;
-import com.study.NIHo.domain.user.value.StatusInfo;
+import com.study.NIHo.api.user.enums.UserStatus;
+import com.study.NIHo.api.user.domain.entity.value.LoginInfo;
+import com.study.NIHo.api.user.domain.entity.value.StatusInfo;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -19,6 +18,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Entity
@@ -26,7 +27,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "user")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-//@SQLRestriction("del_yn = false")
+@SQLDelete(sql = "UPDATE user SET del_yn = true WHERE user_id = ?")
+@SQLRestriction("del_yn = false")
 public class User extends BaseTimeEntity {
 
     @Id
@@ -42,7 +44,7 @@ public class User extends BaseTimeEntity {
 
     private String username;
 
-//    private boolean delYn = Boolean.FALSE;
+    private boolean delYn = Boolean.FALSE;
 
     public static User of(UserAddRequestDTO dto) {
 
@@ -55,7 +57,7 @@ public class User extends BaseTimeEntity {
         // status Info
         StatusInfo inputStatusInfo = StatusInfo.builder()
                 .userStatus(UserStatus.NORMAL)
-                .userRole(UserRole.USER)
+                .userRole(dto.getUserRole())
                 .build();
 
         return User.builder()
