@@ -1,4 +1,4 @@
-package com.study.NIHo.domain.user.enums;
+package com.study.NIHo.api.user.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -6,8 +6,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum UserRole {
-    USER("USER"),
-    ADMIN("ADMIN");
+    ROLE_USER("USER"),
+    ROLE_ADMIN("ADMIN");
 
     private final String role;
 
