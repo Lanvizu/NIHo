@@ -1,5 +1,6 @@
 package com.study.NIHo.config.login.security.provide;
 
+import com.study.NIHo.util.cookie.CookieUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -15,6 +16,7 @@ import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -24,6 +26,8 @@ public class JwtProvider {
 
     // jwt 만료 시간 1시간
     private static final long JWT_TOKEN_VALID = (long) 1000 * 60 * 30;
+
+    private final CookieUtil cookieUtil;
 
     @Value("${jwt.secret}")
     private String secret;
@@ -196,5 +200,10 @@ public class JwtProvider {
         }
 
         return false;
+    }
+
+    public ResponseCookie generateAccessTokenCookie(final String id) {
+        String token = generateAccessToken(id);
+        return cookieUtil.createAccessTokenCookie(token, JWT_TOKEN_VALID / 1000);
     }
 }
