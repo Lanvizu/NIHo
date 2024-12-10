@@ -2,8 +2,8 @@ package com.study.NIHo.api.user.domain.entity;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.study.NIHo.api.common.entity.BaseTimeEntity;
 import com.study.NIHo.api.user.dto.request.UserAddRequestDTO;
-import com.study.NIHo.domain.BaseTimeEntity;
 import com.study.NIHo.api.user.enums.UserStatus;
 import com.study.NIHo.api.user.domain.entity.value.LoginInfo;
 import com.study.NIHo.api.user.domain.entity.value.StatusInfo;

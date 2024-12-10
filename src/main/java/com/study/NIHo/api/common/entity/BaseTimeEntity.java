@@ -1,4 +1,4 @@
-package com.study.NIHo.domain;
+package com.study.NIHo.api.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
