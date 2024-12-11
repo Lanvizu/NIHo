@@ -50,6 +50,8 @@ public class SecurityConfig {
                 mvc.pattern("/signup"),
                 mvc.pattern("/register"),
                 mvc.pattern("/token-refresh"),
+                mvc.pattern("/room/list"),
+                mvc.pattern("/room/{roomId}"),
                 mvc.pattern("/favicon.ico"),
                 mvc.pattern("/error"),
         };
