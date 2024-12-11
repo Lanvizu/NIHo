@@ -4,14 +4,17 @@ import axios from 'axios';
 import * as bootstrap from 'bootstrap';
 import '../styles/styles.css';
 import NIH0_01 from '../img/NIHo_01.png';
+import testRoom_01 from '../img/testRoom_01.png'
+import close_icon from '../img/close-icon.svg'
 
 function MainPage() {
     const [loginData, setLoginData] = useState({ email: '', password: '' });
     const [signupData, setSignupData] = useState({ email: '', password: '', username: '', confirmPassword: '' });
+    const [rooms, setRooms] = useState([]); // 객실 데이터를 저장할 상태
+    const [isLoading, setIsLoading] = useState(true); // 로딩 상태
     const handleLoginChange = (e) => {
         setLoginData({ ...loginData, [e.target.name]: e.target.value });
     };
-
     const handleSignupChange = (e) => {
         setSignupData({ ...signupData, [e.target.name]: e.target.value });
     };
@@ -39,6 +42,25 @@ function MainPage() {
         };
     }, []);
 
+    useEffect(() => {
+        const fetchRooms = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/room/list');
+                if (response.data.result === "success" && response.data.data.rooms) {
+                    setRooms(response.data.data.rooms); // rooms 데이터 설정
+                } else {
+                    throw new Error(response.data.msg || '데이터를 가져오는 데 실패했습니다.');
+                }
+            } catch (err) {
+                console.error('객실 데이터를 가져오는 중 오류 발생:', err);
+            } finally {
+                setIsLoading(false); // 로딩 상태 해제
+            }
+        };
+
+        fetchRooms();
+    }, []);
+
     const resetLoginForm = () => {
         setLoginData({ email: '', password: '' });
     };
@@ -55,14 +77,41 @@ function MainPage() {
                 withCredentials: true
             });
             console.log('Login successful:', response.data);
+            alert('login completed successfully!');
             navigate('/');
             const modal = document.getElementById('loginModal');
             const modalInstance = bootstrap.Modal.getInstance(modal);
             modalInstance.hide();
         } catch (error) {
             console.error('Login failed:', error);
-            alert('Login failed. Please check your email and password.');
+
+            if (error.response && error.response.status === 400) {
+                const errorData = error.response.data;
+                let errorMessage = 'Login failed: ';
+
+                switch(errorData.errorCode) {
+                    case 'U0001':
+                        errorMessage += '존재하지 않는 사용자입니다.';
+                        break;
+                    case 'l0001':
+                        errorMessage += '아이디 혹은 비밀번호가 일치하지 않습니다.';
+                        break;
+                    default:
+                        errorMessage += errorData.errorMsg || '알 수 없는 오류가 발생했습니다.';
+                }
+
+                const errorElement = document.getElementById('loginErrorMessage');
+                if (errorElement) {
+                    errorElement.textContent = errorMessage;
+                    errorElement.style.display = 'block';
+                } else {
+                    alert(errorMessage);
+                }
+            } else {
+                alert('로그인에 실패했습니다. 다시 시도해 주세요.');
+            }
         }
+
     };
 
     const handleSignup = async (e) => {
@@ -81,15 +130,37 @@ function MainPage() {
             const loginModal = document.getElementById('loginModal');
             const loginModalInstance = new bootstrap.Modal(loginModal);
             loginModalInstance.show();
-            //
-            // // 회원가입 폼 초기화
-            // setUsername('');
-            // setSignupEmail('');
-            // setSignupPassword('');
-            // setConfirmPassword('');
+
         } catch (error) {
             console.error('Signup failed:', error);
-            alert('Signup failed. Please try again.');
+
+            if (error.response && error.response.status === 400) {
+                const errorData = error.response.data;
+                let errorMessage = 'Signup failed: ';
+
+                switch(errorData.errorCode) {
+                    case 'U0002':
+                        errorMessage += '이미 사용 중인 이메일입니다.';
+                        break;
+                    case 'U0003':
+                        errorMessage += '비밀번호가 일치하지 않습니다.';
+                        break;
+                    // 다른 에러 코드에 대한 처리를 추가할 수 있습니다.
+                    default:
+                        errorMessage += errorData.errorMsg || '알 수 없는 오류가 발생했습니다.';
+                }
+
+                // 에러 메시지를 화면에 표시
+                const errorElement = document.getElementById('signupErrorMessage');
+                if (errorElement) {
+                    errorElement.textContent = errorMessage;
+                    errorElement.style.display = 'block';
+                } else {
+                    alert(errorMessage);
+                }
+            } else {
+                alert('회원가입에 실패했습니다. 다시 시도해 주세요.');
+            }
         }
     };
     return (
@@ -98,7 +169,7 @@ function MainPage() {
             <nav className="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
                 <div className="container">
                     <a className="navbar-brand" href="#page-top">
-                        <img src={NIH0_01} alt="..." />
+                        <img src={NIH0_01} alt="..."/>
                     </a>
                     <button
                         className="navbar-toggler"
@@ -110,7 +181,7 @@ function MainPage() {
                         aria-label="Toggle navigation"
                     >
                         Menu
-                        <i className="fas fa-bars ms-1" />
+                        <i className="fas fa-bars ms-1"/>
                     </button>
                     <div className="collapse navbar-collapse" id="navbarResponsive">
                         <ul className="navbar-nav text-uppercase ms-auto py-4 py-lg-0">
@@ -154,12 +225,14 @@ function MainPage() {
                 </div>
             </nav>
             {/* Login Modal */}
-            <div className="modal fade" id="loginModal" tabIndex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+            <div className="modal fade" id="loginModal" tabIndex="-1" aria-labelledby="loginModalLabel"
+                 aria-hidden="true">
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="modal-header">
                             <h5 className="modal-title" id="loginModalLabel">Login</h5>
-                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                         </div>
                         <div className="modal-body">
                             <form onSubmit={handleLogin}>
@@ -206,12 +279,14 @@ function MainPage() {
                 </div>
             </div>
             {/* SignUp Modal */}
-            <div className="modal fade" id="signupModal" tabIndex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
+            <div className="modal fade" id="signupModal" tabIndex="-1" aria-labelledby="signupModalLabel"
+                 aria-hidden="true">
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="modal-header">
                             <h5 className="modal-title" id="signupModalLabel">SignUp</h5>
-                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                         </div>
                         <div className="modal-body">
                             <form onSubmit={handleSignup}>
@@ -283,7 +358,7 @@ function MainPage() {
             {/* Masthead*/}
             <header className="masthead">
                 <div className="container">
-                <div className="masthead-subheading">Welcome To Hotel NIHo</div>
+                    <div className="masthead-subheading">Welcome To Hotel NIHo</div>
                     <div className="masthead-heading text-uppercase">
                         Nature Inspired Hotel
                     </div>
@@ -305,8 +380,8 @@ function MainPage() {
                     <div className="row text-center">
                         <div className="col-md-4">
           <span className="fa-stack fa-4x">
-            <i className="fas fa-circle fa-stack-2x text-primary" />
-            <i className="fas fa-shopping-cart fa-stack-1x fa-inverse" />
+            <i className="fas fa-circle fa-stack-2x text-primary"/>
+            <i className="fas fa-shopping-cart fa-stack-1x fa-inverse"/>
           </span>
                             <h4 className="my-3">E-Commerce</h4>
                             <p className="text-muted">
@@ -316,8 +391,8 @@ function MainPage() {
                         </div>
                         <div className="col-md-4">
           <span className="fa-stack fa-4x">
-            <i className="fas fa-circle fa-stack-2x text-primary" />
-            <i className="fas fa-laptop fa-stack-1x fa-inverse" />
+            <i className="fas fa-circle fa-stack-2x text-primary"/>
+            <i className="fas fa-laptop fa-stack-1x fa-inverse"/>
           </span>
                             <h4 className="my-3">Responsive Design</h4>
                             <p className="text-muted">
@@ -327,8 +402,8 @@ function MainPage() {
                         </div>
                         <div className="col-md-4">
           <span className="fa-stack fa-4x">
-            <i className="fas fa-circle fa-stack-2x text-primary" />
-            <i className="fas fa-lock fa-stack-1x fa-inverse" />
+            <i className="fas fa-circle fa-stack-2x text-primary"/>
+            <i className="fas fa-lock fa-stack-1x fa-inverse"/>
           </span>
                             <h4 className="my-3">Web Security</h4>
                             <p className="text-muted">
@@ -339,7 +414,9 @@ function MainPage() {
                     </div>
                 </div>
             </section>
+
             {/* Book Room*/}
+
             <section className="page-section bg-light" id="bookRoom">
                 <div className="container">
                     <div className="text-center">
@@ -348,172 +425,220 @@ function MainPage() {
                             Lorem ipsum dolor sit amet consectetur.
                         </h3>
                     </div>
-                    <div className="row">
-                        <div className="col-lg-4 col-sm-6 mb-4">
-                            {/* Portfolio item 1*/}
-                            <div className="portfolio-item">
-                                <a
-                                    className="portfolio-link"
-                                    data-bs-toggle="modal"
-                                    href="#portfolioModal1"
-                                >
-                                    <div className="portfolio-hover">
-                                        <div className="portfolio-hover-content">
-                                            <i className="fas fa-plus fa-3x" />
+                    {isLoading ? (
+                        <p>Loading...</p>
+                    ) : (
+                        <div className="row">
+                            {rooms.map((room) => (
+                                <div className="col-lg-4 col-sm-6 mb-4" key={room.id}>
+                                    {/* Room Item */}
+                                    <div className="room-item">
+                                        <a
+                                            className="room-link"
+                                            data-bs-toggle="modal"
+                                            href={`#roomModal${room.id}`}
+                                        >
+                                            <div className="room-hover">
+                                                <div className="room-hover-content">
+                                                    <i className="fas fa-plus fa-3x"/>
+                                                </div>
+                                            </div>
+                                            <img
+                                                className="img-fluid"
+                                                src={testRoom_01}
+                                                // src={`../img/room/${room.id}.jpg`}
+                                                alt={room.roomName}
+                                            />
+                                        </a>
+                                        <div className="room-caption">
+                                            <div className="room-caption-heading">{room.roomName}</div>
+                                            <div className="room-caption-subheading text-muted">
+                                                Capacity: {room.capacity}, Grade: {room.roomGrade}
+                                            </div>
                                         </div>
                                     </div>
-                                    <img
-                                        className="img-fluid"
-                                        src="../img/portfolio/1.jpg"
-                                        alt="..."
-                                    />
-                                </a>
-                                <div className="portfolio-caption">
-                                    <div className="portfolio-caption-heading">Threads</div>
-                                    <div className="portfolio-caption-subheading text-muted">
-                                        Illustration
-                                    </div>
                                 </div>
-                            </div>
+                            ))}
                         </div>
-                        <div className="col-lg-4 col-sm-6 mb-4">
-                            {/* Portfolio item 2*/}
-                            <div className="portfolio-item">
-                                <a
-                                    className="portfolio-link"
-                                    data-bs-toggle="modal"
-                                    href="#portfolioModal2"
-                                >
-                                    <div className="portfolio-hover">
-                                        <div className="portfolio-hover-content">
-                                            <i className="fas fa-plus fa-3x" />
-                                        </div>
-                                    </div>
-                                    <img
-                                        className="img-fluid"
-                                        src="../img/portfolio/2.jpg"
-                                        alt="..."
-                                    />
-                                </a>
-                                <div className="portfolio-caption">
-                                    <div className="portfolio-caption-heading">Explore</div>
-                                    <div className="portfolio-caption-subheading text-muted">
-                                        Graphic Design
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-4 col-sm-6 mb-4">
-                            {/* Portfolio item 3*/}
-                            <div className="portfolio-item">
-                                <a
-                                    className="portfolio-link"
-                                    data-bs-toggle="modal"
-                                    href="#portfolioModal3"
-                                >
-                                    <div className="portfolio-hover">
-                                        <div className="portfolio-hover-content">
-                                            <i className="fas fa-plus fa-3x" />
-                                        </div>
-                                    </div>
-                                    <img
-                                        className="img-fluid"
-                                        src="../img/portfolio/3.jpg"
-                                        alt="..."
-                                    />
-                                </a>
-                                <div className="portfolio-caption">
-                                    <div className="portfolio-caption-heading">Finish</div>
-                                    <div className="portfolio-caption-subheading text-muted">
-                                        Identity
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-4 col-sm-6 mb-4 mb-lg-0">
-                            {/* Portfolio item 4*/}
-                            <div className="portfolio-item">
-                                <a
-                                    className="portfolio-link"
-                                    data-bs-toggle="modal"
-                                    href="#portfolioModal4"
-                                >
-                                    <div className="portfolio-hover">
-                                        <div className="portfolio-hover-content">
-                                            <i className="fas fa-plus fa-3x" />
-                                        </div>
-                                    </div>
-                                    <img
-                                        className="img-fluid"
-                                        src="../img/portfolio/4.jpg"
-                                        alt="..."
-                                    />
-                                </a>
-                                <div className="portfolio-caption">
-                                    <div className="portfolio-caption-heading">Lines</div>
-                                    <div className="portfolio-caption-subheading text-muted">
-                                        Branding
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-4 col-sm-6 mb-4 mb-sm-0">
-                            {/* Portfolio item 5*/}
-                            <div className="portfolio-item">
-                                <a
-                                    className="portfolio-link"
-                                    data-bs-toggle="modal"
-                                    href="#portfolioModal5"
-                                >
-                                    <div className="portfolio-hover">
-                                        <div className="portfolio-hover-content">
-                                            <i className="fas fa-plus fa-3x" />
-                                        </div>
-                                    </div>
-                                    <img
-                                        className="img-fluid"
-                                        src="../img/portfolio/5.jpg"
-                                        alt="..."
-                                    />
-                                </a>
-                                <div className="portfolio-caption">
-                                    <div className="portfolio-caption-heading">Southwest</div>
-                                    <div className="portfolio-caption-subheading text-muted">
-                                        Website Design
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-4 col-sm-6">
-                            {/* Portfolio item 6*/}
-                            <div className="portfolio-item">
-                                <a
-                                    className="portfolio-link"
-                                    data-bs-toggle="modal"
-                                    href="#portfolioModal6"
-                                >
-                                    <div className="portfolio-hover">
-                                        <div className="portfolio-hover-content">
-                                            <i className="fas fa-plus fa-3x" />
-                                        </div>
-                                    </div>
-                                    <img
-                                        className="img-fluid"
-                                        src="../img/portfolio/6.jpg"
-                                        alt="..."
-                                    />
-                                </a>
-                                <div className="portfolio-caption">
-                                    <div className="portfolio-caption-heading">Window</div>
-                                    <div className="portfolio-caption-subheading text-muted">
-                                        Photography
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </section>
+
+            {/*<section className="page-section bg-light" id="bookRoom">*/}
+            {/*    <div className="container">*/}
+            {/*        <div className="text-center">*/}
+            {/*            <h2 className="section-heading text-uppercase">Book Room</h2>*/}
+            {/*            <h3 className="section-subheading text-muted">*/}
+            {/*                Lorem ipsum dolor sit amet consectetur.*/}
+            {/*            </h3>*/}
+            {/*        </div>*/}
+            {/*        <div className="row">*/}
+            {/*            <div className="col-lg-4 col-sm-6 mb-4">*/}
+            {/*                /!* Room 1*!/*/}
+            {/*                <div className="room-item">*/}
+            {/*                    <a*/}
+            {/*                        className="room-link"*/}
+            {/*                        data-bs-toggle="modal"*/}
+            {/*                        href="#roomModal1"*/}
+            {/*                    >*/}
+            {/*                        <div className="room-hover">*/}
+            {/*                            <div className="room-hover-content">*/}
+            {/*                                <i className="fas fa-plus fa-3x"/>*/}
+            {/*                            </div>*/}
+            {/*                        </div>*/}
+            {/*                        <img*/}
+            {/*                            className="img-fluid"*/}
+            {/*                            src="../img/room/1.jpg"*/}
+            {/*                            alt="..."*/}
+            {/*                        />*/}
+            {/*                    </a>*/}
+            {/*                    <div className="room-caption">*/}
+            {/*                        <div className="room-caption-heading">Threads</div>*/}
+            {/*                        <div className="room-caption-subheading text-muted">*/}
+            {/*                            Illustration*/}
+            {/*                        </div>*/}
+            {/*                    </div>*/}
+            {/*                </div>*/}
+            {/*            </div>*/}
+            {/*            <div className="col-lg-4 col-sm-6 mb-4">*/}
+            {/*                /!* room item 2*!/*/}
+            {/*                <div className="room-item">*/}
+            {/*                    <a*/}
+            {/*                        className="room-link"*/}
+            {/*                        data-bs-toggle="modal"*/}
+            {/*                        href="#roomModal2"*/}
+            {/*                    >*/}
+            {/*                        <div className="room-hover">*/}
+            {/*                            <div className="room-hover-content">*/}
+            {/*                                <i className="fas fa-plus fa-3x"/>*/}
+            {/*                            </div>*/}
+            {/*                        </div>*/}
+            {/*                        <img*/}
+            {/*                            className="img-fluid"*/}
+            {/*                            src="../img/room/2.jpg"*/}
+            {/*                            alt="..."*/}
+            {/*                        />*/}
+            {/*                    </a>*/}
+            {/*                    <div className="room-caption">*/}
+            {/*                        <div className="room-caption-heading">Explore</div>*/}
+            {/*                        <div className="room-caption-subheading text-muted">*/}
+            {/*                            Graphic Design*/}
+            {/*                        </div>*/}
+            {/*                    </div>*/}
+            {/*                </div>*/}
+            {/*            </div>*/}
+            {/*            <div className="col-lg-4 col-sm-6 mb-4">*/}
+            {/*                /!* room item 3*!/*/}
+            {/*                <div className="room-item">*/}
+            {/*                    <a*/}
+            {/*                        className="room-link"*/}
+            {/*                        data-bs-toggle="modal"*/}
+            {/*                        href="#roomModal3"*/}
+            {/*                    >*/}
+            {/*                        <div className="room-hover">*/}
+            {/*                            <div className="room-hover-content">*/}
+            {/*                                <i className="fas fa-plus fa-3x"/>*/}
+            {/*                            </div>*/}
+            {/*                        </div>*/}
+            {/*                        <img*/}
+            {/*                            className="img-fluid"*/}
+            {/*                            src="../img/room/3.jpg"*/}
+            {/*                            alt="..."*/}
+            {/*                        />*/}
+            {/*                    </a>*/}
+            {/*                    <div className="room-caption">*/}
+            {/*                        <div className="room-caption-heading">Finish</div>*/}
+            {/*                        <div className="room-caption-subheading text-muted">*/}
+            {/*                            Identity*/}
+            {/*                        </div>*/}
+            {/*                    </div>*/}
+            {/*                </div>*/}
+            {/*            </div>*/}
+            {/*            <div className="col-lg-4 col-sm-6 mb-4 mb-lg-0">*/}
+            {/*                /!* room item 4*!/*/}
+            {/*                <div className="room-item">*/}
+            {/*                    <a*/}
+            {/*                        className="room-link"*/}
+            {/*                        data-bs-toggle="modal"*/}
+            {/*                        href="#roomModal4"*/}
+            {/*                    >*/}
+            {/*                        <div className="room-hover">*/}
+            {/*                            <div className="room-hover-content">*/}
+            {/*                                <i className="fas fa-plus fa-3x"/>*/}
+            {/*                            </div>*/}
+            {/*                        </div>*/}
+            {/*                        <img*/}
+            {/*                            className="img-fluid"*/}
+            {/*                            src="../img/room/4.jpg"*/}
+            {/*                            alt="..."*/}
+            {/*                        />*/}
+            {/*                    </a>*/}
+            {/*                    <div className="room-caption">*/}
+            {/*                        <div className="room-caption-heading">Lines</div>*/}
+            {/*                        <div className="room-caption-subheading text-muted">*/}
+            {/*                            Branding*/}
+            {/*                        </div>*/}
+            {/*                    </div>*/}
+            {/*                </div>*/}
+            {/*            </div>*/}
+            {/*            <div className="col-lg-4 col-sm-6 mb-4 mb-sm-0">*/}
+            {/*                /!* room item 5*!/*/}
+            {/*                <div className="room-item">*/}
+            {/*                    <a*/}
+            {/*                        className="room-link"*/}
+            {/*                        data-bs-toggle="modal"*/}
+            {/*                        href="#roomModal5"*/}
+            {/*                    >*/}
+            {/*                        <div className="room-hover">*/}
+            {/*                            <div className="room-hover-content">*/}
+            {/*                                <i className="fas fa-plus fa-3x"/>*/}
+            {/*                            </div>*/}
+            {/*                        </div>*/}
+            {/*                        <img*/}
+            {/*                            className="img-fluid"*/}
+            {/*                            src="../img/room/5.jpg"*/}
+            {/*                            alt="..."*/}
+            {/*                        />*/}
+            {/*                    </a>*/}
+            {/*                    <div className="room-caption">*/}
+            {/*                        <div className="room-caption-heading">Southwest</div>*/}
+            {/*                        <div className="room-caption-subheading text-muted">*/}
+            {/*                            Website Design*/}
+            {/*                        </div>*/}
+            {/*                    </div>*/}
+            {/*                </div>*/}
+            {/*            </div>*/}
+            {/*            <div className="col-lg-4 col-sm-6">*/}
+            {/*                /!* room item 6*!/*/}
+            {/*                <div className="room-item">*/}
+            {/*                    <a*/}
+            {/*                        className="room-link"*/}
+            {/*                        data-bs-toggle="modal"*/}
+            {/*                        href="#roomModal6"*/}
+            {/*                    >*/}
+            {/*                        <div className="room-hover">*/}
+            {/*                            <div className="room-hover-content">*/}
+            {/*                                <i className="fas fa-plus fa-3x"/>*/}
+            {/*                            </div>*/}
+            {/*                        </div>*/}
+            {/*                        <img*/}
+            {/*                            className="img-fluid"*/}
+            {/*                            src="../img/room/6.jpg"*/}
+            {/*                            alt="..."*/}
+            {/*                        />*/}
+            {/*                    </a>*/}
+            {/*                    <div className="room-caption">*/}
+            {/*                        <div className="room-caption-heading">Window</div>*/}
+            {/*                        <div className="room-caption-subheading text-muted">*/}
+            {/*                            Photography*/}
+            {/*                        </div>*/}
+            {/*                    </div>*/}
+            {/*                </div>*/}
+            {/*            </div>*/}
+            {/*        </div>*/}
+            {/*    </div>*/}
+            {/*</section>*/}
+
             {/* About*/}
             <section className="page-section" id="about">
                 <div className="container">
@@ -620,9 +745,9 @@ function MainPage() {
                             <div className="timeline-image">
                                 <h4>
                                     Be Part
-                                    <br />
+                                    <br/>
                                     Of Our
-                                    <br />
+                                    <br/>
                                     Story!
                                 </h4>
                             </div>
@@ -654,21 +779,21 @@ function MainPage() {
                                     href="#!"
                                     aria-label="Parveen Anand Twitter Profile"
                                 >
-                                    <i className="fab fa-twitter" />
+                                    <i className="fab fa-twitter"/>
                                 </a>
                                 <a
                                     className="btn btn-dark btn-social mx-2"
                                     href="#!"
                                     aria-label="Parveen Anand Facebook Profile"
                                 >
-                                    <i className="fab fa-facebook-f" />
+                                    <i className="fab fa-facebook-f"/>
                                 </a>
                                 <a
                                     className="btn btn-dark btn-social mx-2"
                                     href="#!"
                                     aria-label="Parveen Anand LinkedIn Profile"
                                 >
-                                    <i className="fab fa-linkedin-in" />
+                                    <i className="fab fa-linkedin-in"/>
                                 </a>
                             </div>
                         </div>
@@ -686,21 +811,21 @@ function MainPage() {
                                     href="#!"
                                     aria-label="Diana Petersen Twitter Profile"
                                 >
-                                    <i className="fab fa-twitter" />
+                                    <i className="fab fa-twitter"/>
                                 </a>
                                 <a
                                     className="btn btn-dark btn-social mx-2"
                                     href="#!"
                                     aria-label="Diana Petersen Facebook Profile"
                                 >
-                                    <i className="fab fa-facebook-f" />
+                                    <i className="fab fa-facebook-f"/>
                                 </a>
                                 <a
                                     className="btn btn-dark btn-social mx-2"
                                     href="#!"
                                     aria-label="Diana Petersen LinkedIn Profile"
                                 >
-                                    <i className="fab fa-linkedin-in" />
+                                    <i className="fab fa-linkedin-in"/>
                                 </a>
                             </div>
                         </div>
@@ -718,21 +843,21 @@ function MainPage() {
                                     href="#!"
                                     aria-label="Larry Parker Twitter Profile"
                                 >
-                                    <i className="fab fa-twitter" />
+                                    <i className="fab fa-twitter"/>
                                 </a>
                                 <a
                                     className="btn btn-dark btn-social mx-2"
                                     href="#!"
                                     aria-label="Larry Parker Facebook Profile"
                                 >
-                                    <i className="fab fa-facebook-f" />
+                                    <i className="fab fa-facebook-f"/>
                                 </a>
                                 <a
                                     className="btn btn-dark btn-social mx-2"
                                     href="#!"
                                     aria-label="Larry Parker LinkedIn Profile"
                                 >
-                                    <i className="fab fa-linkedin-in" />
+                                    <i className="fab fa-linkedin-in"/>
                                 </a>
                             </div>
                         </div>
@@ -887,7 +1012,7 @@ function MainPage() {
                             <div className="text-center text-white mb-3">
                                 <div className="fw-bolder">Form submission successful!</div>
                                 To activate this form, sign up at
-                                <br />
+                                <br/>
                                 <a href="https://startbootstrap.com/solution/contact-forms">
                                     https://startbootstrap.com/solution/contact-forms
                                 </a>
@@ -928,21 +1053,21 @@ function MainPage() {
                                 href="#!"
                                 aria-label="Twitter"
                             >
-                                <i className="fab fa-twitter" />
+                                <i className="fab fa-twitter"/>
                             </a>
                             <a
                                 className="btn btn-dark btn-social mx-2"
                                 href="#!"
                                 aria-label="Facebook"
                             >
-                                <i className="fab fa-facebook-f" />
+                                <i className="fab fa-facebook-f"/>
                             </a>
                             <a
                                 className="btn btn-dark btn-social mx-2"
                                 href="#!"
                                 aria-label="LinkedIn"
                             >
-                                <i className="fab fa-linkedin-in" />
+                                <i className="fab fa-linkedin-in"/>
                             </a>
                         </div>
                         <div className="col-lg-4 text-lg-end">
@@ -956,11 +1081,11 @@ function MainPage() {
                     </div>
                 </div>
             </footer>
-            {/* Portfolio Modals*/}
-            {/* Portfolio item 1 modal popup*/}
+            {/* room Modals*/}
+            {/* room item 1 modal popup*/}
             <div
-                className="portfolio-modal modal fade"
-                id="portfolioModal1"
+                className="room-modal modal fade"
+                id="roomModal1"
                 tabIndex={-1}
                 role="dialog"
                 aria-hidden="true"
@@ -968,7 +1093,8 @@ function MainPage() {
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal" />
+                            {/*<img src="../img/close-icon.svg" alt="Close modal"/>*/}
+                            <img src={close_icon} alt="Close modal"/>
                         </div>
                         <div className="container">
                             <div className="row justify-content-center">
@@ -981,7 +1107,7 @@ function MainPage() {
                                         </p>
                                         <img
                                             className="img-fluid d-block mx-auto"
-                                            src="../img/portfolio/1.jpg"
+                                            src="../img/room/1.jpg"
                                             alt="..."
                                         />
                                         <p>
@@ -1006,7 +1132,7 @@ function MainPage() {
                                             data-bs-dismiss="modal"
                                             type="button"
                                         >
-                                            <i className="fas fa-xmark me-1" />
+                                            <i className="fas fa-xmark me-1"/>
                                             Close Project
                                         </button>
                                     </div>
@@ -1016,10 +1142,10 @@ function MainPage() {
                     </div>
                 </div>
             </div>
-            {/* Portfolio item 2 modal popup*/}
+            {/* room item 2 modal popup*/}
             <div
-                className="portfolio-modal modal fade"
-                id="portfolioModal2"
+                className="room-modal modal fade"
+                id="roomModal2"
                 tabIndex={-1}
                 role="dialog"
                 aria-hidden="true"
@@ -1027,7 +1153,7 @@ function MainPage() {
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal" />
+                            <img src="../img/close-icon.svg" alt="Close modal"/>
                         </div>
                         <div className="container">
                             <div className="row justify-content-center">
@@ -1040,7 +1166,7 @@ function MainPage() {
                                         </p>
                                         <img
                                             className="img-fluid d-block mx-auto"
-                                            src="../img/portfolio/2.jpg"
+                                            src="../img/room/2.jpg"
                                             alt="..."
                                         />
                                         <p>
@@ -1065,7 +1191,7 @@ function MainPage() {
                                             data-bs-dismiss="modal"
                                             type="button"
                                         >
-                                            <i className="fas fa-xmark me-1" />
+                                            <i className="fas fa-xmark me-1"/>
                                             Close Project
                                         </button>
                                     </div>
@@ -1075,10 +1201,10 @@ function MainPage() {
                     </div>
                 </div>
             </div>
-            {/* Portfolio item 3 modal popup*/}
+            {/* room item 3 modal popup*/}
             <div
-                className="portfolio-modal modal fade"
-                id="portfolioModal3"
+                className="room-modal modal fade"
+                id="roomModal3"
                 tabIndex={-1}
                 role="dialog"
                 aria-hidden="true"
@@ -1086,7 +1212,7 @@ function MainPage() {
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal" />
+                            <img src="../img/close-icon.svg" alt="Close modal"/>
                         </div>
                         <div className="container">
                             <div className="row justify-content-center">
@@ -1099,7 +1225,7 @@ function MainPage() {
                                         </p>
                                         <img
                                             className="img-fluid d-block mx-auto"
-                                            src="../img/portfolio/3.jpg"
+                                            src="../img/room/3.jpg"
                                             alt="..."
                                         />
                                         <p>
@@ -1124,7 +1250,7 @@ function MainPage() {
                                             data-bs-dismiss="modal"
                                             type="button"
                                         >
-                                            <i className="fas fa-xmark me-1" />
+                                            <i className="fas fa-xmark me-1"/>
                                             Close Project
                                         </button>
                                     </div>
@@ -1134,10 +1260,10 @@ function MainPage() {
                     </div>
                 </div>
             </div>
-            {/* Portfolio item 4 modal popup*/}
+            {/* room item 4 modal popup*/}
             <div
-                className="portfolio-modal modal fade"
-                id="portfolioModal4"
+                className="room-modal modal fade"
+                id="roomModal4"
                 tabIndex={-1}
                 role="dialog"
                 aria-hidden="true"
@@ -1145,7 +1271,7 @@ function MainPage() {
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal" />
+                            <img src="../img/close-icon.svg" alt="Close modal"/>
                         </div>
                         <div className="container">
                             <div className="row justify-content-center">
@@ -1158,7 +1284,7 @@ function MainPage() {
                                         </p>
                                         <img
                                             className="img-fluid d-block mx-auto"
-                                            src="../img/portfolio/4.jpg"
+                                            src="../img/room/4.jpg"
                                             alt="..."
                                         />
                                         <p>
@@ -1183,7 +1309,7 @@ function MainPage() {
                                             data-bs-dismiss="modal"
                                             type="button"
                                         >
-                                            <i className="fas fa-xmark me-1" />
+                                            <i className="fas fa-xmark me-1"/>
                                             Close Project
                                         </button>
                                     </div>
@@ -1193,10 +1319,10 @@ function MainPage() {
                     </div>
                 </div>
             </div>
-            {/* Portfolio item 5 modal popup*/}
+            {/* room item 5 modal popup*/}
             <div
-                className="portfolio-modal modal fade"
-                id="portfolioModal5"
+                className="room-modal modal fade"
+                id="roomModal5"
                 tabIndex={-1}
                 role="dialog"
                 aria-hidden="true"
@@ -1204,7 +1330,7 @@ function MainPage() {
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal" />
+                            <img src="../img/close-icon.svg" alt="Close modal"/>
                         </div>
                         <div className="container">
                             <div className="row justify-content-center">
@@ -1217,7 +1343,7 @@ function MainPage() {
                                         </p>
                                         <img
                                             className="img-fluid d-block mx-auto"
-                                            src="../img/portfolio/5.jpg"
+                                            src="../img/room/5.jpg"
                                             alt="..."
                                         />
                                         <p>
@@ -1242,7 +1368,7 @@ function MainPage() {
                                             data-bs-dismiss="modal"
                                             type="button"
                                         >
-                                            <i className="fas fa-xmark me-1" />
+                                            <i className="fas fa-xmark me-1"/>
                                             Close Project
                                         </button>
                                     </div>
@@ -1252,10 +1378,10 @@ function MainPage() {
                     </div>
                 </div>
             </div>
-            {/* Portfolio item 6 modal popup*/}
+            {/* room item 6 modal popup*/}
             <div
-                className="portfolio-modal modal fade"
-                id="portfolioModal6"
+                className="room-modal modal fade"
+                id="roomModal6"
                 tabIndex={-1}
                 role="dialog"
                 aria-hidden="true"
@@ -1263,7 +1389,7 @@ function MainPage() {
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal" />
+                            <img src="../img/close-icon.svg" alt="Close modal"/>
                         </div>
                         <div className="container">
                             <div className="row justify-content-center">
@@ -1276,7 +1402,7 @@ function MainPage() {
                                         </p>
                                         <img
                                             className="img-fluid d-block mx-auto"
-                                            src="../img/portfolio/6.jpg"
+                                            src="../img/room/6.jpg"
                                             alt="..."
                                         />
                                         <p>
@@ -1301,7 +1427,7 @@ function MainPage() {
                                             data-bs-dismiss="modal"
                                             type="button"
                                         >
-                                            <i className="fas fa-xmark me-1" />
+                                            <i className="fas fa-xmark me-1"/>
                                             Close Project
                                         </button>
                                     </div>
