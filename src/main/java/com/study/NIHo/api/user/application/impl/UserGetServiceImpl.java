@@ -1,10 +1,10 @@
 package com.study.NIHo.api.user.application.impl;
 
 import com.study.NIHo.api.user.dto.response.UserGetResponseDTO;
-import com.study.NIHo.util.exception.UserExceptionResult;
+import com.study.NIHo.util.exception.user.UserExceptionResult;
 import com.study.NIHo.api.user.domain.repository.UserRepository;
 import com.study.NIHo.api.user.application.UserGetService;
-import com.study.NIHo.util.exception.UserException;
+import com.study.NIHo.util.exception.user.UserException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

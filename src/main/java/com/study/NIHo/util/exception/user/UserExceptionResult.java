@@ -1,4 +1,4 @@
-package com.study.NIHo.util.exception;
+package com.study.NIHo.util.exception.user;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -15,5 +15,4 @@ public enum UserExceptionResult {
     private final HttpStatus status;
     private final String code;
     private final String message;
-
 }

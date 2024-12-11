@@ -1,7 +1,7 @@
 package com.study.NIHo.config.exception.user;
 
 import com.study.NIHo.config.exception.common.ApiExceptionEntity;
-import com.study.NIHo.util.exception.UserException;
+import com.study.NIHo.util.exception.user.UserException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
@@ -26,5 +26,4 @@ public class UserApiExceptionAdvice {
                         .errorMsg(e.getUserExceptionResult().getMessage())
                         .build());
     }
-
 }
