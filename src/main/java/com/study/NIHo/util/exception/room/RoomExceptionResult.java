@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum RoomExceptionResult {
 
-    NOT_EXISTS(HttpStatus.BAD_REQUEST, "U0001", "존재하지 않는 객실 아이디입니다.");
+    NOT_EXISTS(HttpStatus.BAD_REQUEST, "R0001", "존재하지 않는 객실 아이디입니다.");
 
     private final HttpStatus status;
     private final String code;
