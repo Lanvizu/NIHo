@@ -2,19 +2,19 @@ package com.study.NIHo.api.room.domain.entity;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.study.NIHo.api.reservation.domain.entity.Reservation;
 import com.study.NIHo.api.room.enums.RoomType;
-import com.study.NIHo.api.user.domain.entity.User;
-import com.study.NIHo.api.user.domain.entity.value.LoginInfo;
-import com.study.NIHo.api.user.domain.entity.value.StatusInfo;
-import com.study.NIHo.api.user.dto.request.UserAddRequestDTO;
-import com.study.NIHo.api.user.enums.UserStatus;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,4 +39,7 @@ public class Room {
     private RoomType roomType;
 
     private int price;
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Reservation> reservations = new ArrayList<>();
 }
