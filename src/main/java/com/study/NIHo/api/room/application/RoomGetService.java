@@ -1,5 +1,6 @@
 package com.study.NIHo.api.room.application;
 
+import com.study.NIHo.api.room.domain.entity.Room;
 import com.study.NIHo.api.room.dto.response.RoomDetailResponseDTO;
 import com.study.NIHo.api.room.dto.response.RoomListResponseDTO;
 
@@ -17,5 +18,13 @@ public interface RoomGetService {
      * @param roomId 객실 Id
      * @return 객실 디테일 정보 RoomDetailResponseDTO
      */
-    RoomDetailResponseDTO getRoomDetail(Long roomId);
+    RoomDetailResponseDTO getRoomDetail(final long roomId);
+
+    /**
+     * 객실 조회 메서드
+     *
+     * @param roomId 룸 ID
+     * @return Room 객체
+     */
+    Room findRoomById(final long roomId);
 }

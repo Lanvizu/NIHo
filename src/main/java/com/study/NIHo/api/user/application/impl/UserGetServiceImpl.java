@@ -1,5 +1,6 @@
 package com.study.NIHo.api.user.application.impl;
 
+import com.study.NIHo.api.user.domain.entity.User;
 import com.study.NIHo.api.user.dto.response.UserGetResponseDTO;
 import com.study.NIHo.util.exception.user.UserExceptionResult;
 import com.study.NIHo.api.user.domain.repository.UserRepository;
@@ -37,6 +38,18 @@ public class UserGetServiceImpl implements UserGetService {
     public UserGetResponseDTO getUserByEmail(final String email) {
         return userRepository.findByLoginInfoEmail(email)
                 .map(UserGetResponseDTO::of)
+                .orElseThrow(() -> new UserException(UserExceptionResult.NOT_EXISTS));
+    }
+
+    /**
+     * 유저 조회 메서드
+     *
+     * @param userId 유저 ID
+     * @return User 객체
+     */
+    @Override
+    public User findUserById(final long userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserExceptionResult.NOT_EXISTS));
     }
 }

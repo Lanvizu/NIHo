@@ -1,5 +1,6 @@
 package com.study.NIHo.api.user.application;
 
+import com.study.NIHo.api.user.domain.entity.User;
 import com.study.NIHo.api.user.dto.response.UserGetResponseDTO;
 
 public interface UserGetService {
@@ -19,4 +20,12 @@ public interface UserGetService {
      * @return 사용자 정보 UserGetResponseDTO
      */
     UserGetResponseDTO getUserByEmail(final String email);
+
+    /**
+     * 유저 조회 메서드
+     *
+     * @param userId 유저 ID
+     * @return User 객체
+     */
+    User findUserById(final long userId);
 }
