@@ -4,7 +4,7 @@ import com.study.NIHo.api.room.domain.entity.Room;
 import lombok.Builder;
 
 @Builder
-public record RoomDetailResponseDTO(Long id, String roomName, int capacity, int roomGrade, int price) {
+public record RoomDetailResponseDTO(long id, String roomName, int capacity, int roomGrade, int price) {
     public static RoomDetailResponseDTO of(Room room) {
         return RoomDetailResponseDTO.builder()
                 .id(room.getId())
