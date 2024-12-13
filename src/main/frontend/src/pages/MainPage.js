@@ -1,72 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useState, useEffect, useContext} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {RoomContext} from '../App';
+import { reservationService } from '../js/reservationService';
 import axios from 'axios';
 import * as bootstrap from 'bootstrap';
 import '../styles/styles.css';
+import '../js/scripts.js'
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import NIH0_01 from '../img/NIHo_01.png';
 import testRoom_01 from '../img/testRoom_01.png'
 import close_icon from '../img/close-icon.svg'
 
 function MainPage() {
-    const [loginData, setLoginData] = useState({ email: '', password: '' });
-    const [signupData, setSignupData] = useState({ email: '', password: '', username: '', confirmPassword: '' });
-    const [rooms, setRooms] = useState([]); // 객실 데이터를 저장할 상태
-    const [isLoading, setIsLoading] = useState(true); // 로딩 상태
+    const [loginData, setLoginData] = useState({email: '', password: ''});
+    const [signupData, setSignupData] = useState({email: '', password: '', username: '', confirmPassword: ''});
+    const {rooms, roomDetails, isLoading} = useContext(RoomContext);
+    const [selectedRoom, setSelectedRoom] = useState(null);
+    const handleRoomSelect = (room) => {
+        setSelectedRoom(room);
+    };
     const handleLoginChange = (e) => {
-        setLoginData({ ...loginData, [e.target.name]: e.target.value });
+        setLoginData({...loginData, [e.target.name]: e.target.value});
     };
     const handleSignupChange = (e) => {
-        setSignupData({ ...signupData, [e.target.name]: e.target.value });
+        setSignupData({...signupData, [e.target.name]: e.target.value});
     };
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const loadScript = async () => {
-            try {
-                await import('../js/scripts.js');
-            } catch (error) {
-                console.error('스크립트 로딩 중 오류 발생:', error);
-            }
-        };
-
-        loadScript();
-        // 모달 이벤트 리스너 추가
-        const loginModal = document.getElementById('loginModal');
-        const signupModal = document.getElementById('signupModal');
-
-        loginModal.addEventListener('hidden.bs.modal', resetLoginForm);
-        signupModal.addEventListener('hidden.bs.modal', resetSignupForm);
-        return () => {
-            loginModal.removeEventListener('hidden.bs.modal', resetLoginForm);
-            signupModal.removeEventListener('hidden.bs.modal', resetSignupForm);
-        };
-    }, []);
-
-    useEffect(() => {
-        const fetchRooms = async () => {
-            try {
-                const response = await axios.get('http://localhost:8080/room/list');
-                if (response.data.result === "success" && response.data.data.rooms) {
-                    setRooms(response.data.data.rooms); // rooms 데이터 설정
-                } else {
-                    throw new Error(response.data.msg || '데이터를 가져오는 데 실패했습니다.');
-                }
-            } catch (err) {
-                console.error('객실 데이터를 가져오는 중 오류 발생:', err);
-            } finally {
-                setIsLoading(false); // 로딩 상태 해제
-            }
-        };
-
-        fetchRooms();
-    }, []);
-
     const resetLoginForm = () => {
-        setLoginData({ email: '', password: '' });
+        setLoginData({email: '', password: ''});
     };
 
     const resetSignupForm = () => {
-        setSignupData({ email: '', password: '', username: '', confirmPassword: '' });
+        setSignupData({email: '', password: '', username: '', confirmPassword: ''});
     };
 
     const handleLogin = async (e) => {
@@ -74,8 +41,8 @@ function MainPage() {
         try {
             const response = await axios.post('http://localhost:8080/login',
                 loginData, {
-                withCredentials: true
-            });
+                    withCredentials: true
+                });
             console.log('Login successful:', response.data);
             alert('login completed successfully!');
             navigate('/');
@@ -89,7 +56,7 @@ function MainPage() {
                 const errorData = error.response.data;
                 let errorMessage = 'Login failed: ';
 
-                switch(errorData.errorCode) {
+                switch (errorData.errorCode) {
                     case 'U0001':
                         errorMessage += '존재하지 않는 사용자입니다.';
                         break;
@@ -111,7 +78,6 @@ function MainPage() {
                 alert('로그인에 실패했습니다. 다시 시도해 주세요.');
             }
         }
-
     };
 
     const handleSignup = async (e) => {
@@ -138,14 +104,13 @@ function MainPage() {
                 const errorData = error.response.data;
                 let errorMessage = 'Signup failed: ';
 
-                switch(errorData.errorCode) {
+                switch (errorData.errorCode) {
                     case 'U0002':
                         errorMessage += '이미 사용 중인 이메일입니다.';
                         break;
                     case 'U0003':
                         errorMessage += '비밀번호가 일치하지 않습니다.';
                         break;
-                    // 다른 에러 코드에 대한 처리를 추가할 수 있습니다.
                     default:
                         errorMessage += errorData.errorMsg || '알 수 없는 오류가 발생했습니다.';
                 }
@@ -163,12 +128,48 @@ function MainPage() {
             }
         }
     };
+
+    const handleBookNow = async (roomId) => {
+        try {
+            const result = await reservationService.requestReservations(roomId);
+            console.log('Reservation request sent:', result);
+            // 여기에 예약 성공 시 처리 로직 추가 (예: 알림 표시)
+        } catch (error) {
+            console.error('Failed to request reservation:', error);
+            // 여기에 예약 실패 시 처리 로직 추가 (예: 에러 메시지 표시)
+        }
+    };
+
+    useEffect(() => {
+        if (rooms.length > 0) {
+            setSelectedRoom(rooms[0]);
+        }
+    }, [rooms]);
+
+    useEffect(() => {
+        // 모달 이벤트 리스너 추가
+        const loginModal = document.getElementById('loginModal');
+        const signupModal = document.getElementById('signupModal');
+
+        const handleLoginModalHidden = () => resetLoginForm();
+        const handleSignupModalHidden = () => resetSignupForm();
+
+        loginModal.addEventListener('hidden.bs.modal', handleLoginModalHidden);
+        signupModal.addEventListener('hidden.bs.modal', handleSignupModalHidden);
+
+        // 클린업 함수
+        return () => {
+            loginModal.removeEventListener('hidden.bs.modal', handleLoginModalHidden);
+            signupModal.removeEventListener('hidden.bs.modal', handleSignupModalHidden);
+        };
+    }, []);
+
     return (
         <>
             {/* Navigation*/}
             <nav className="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
                 <div className="container">
-                    <a className="navbar-brand" href="#page-top">
+                    <a className="navbar-brand" href="#">
                         <img src={NIH0_01} alt="..."/>
                     </a>
                     <button
@@ -186,13 +187,13 @@ function MainPage() {
                     <div className="collapse navbar-collapse" id="navbarResponsive">
                         <ul className="navbar-nav text-uppercase ms-auto py-4 py-lg-0">
                             <li className="nav-item">
-                                <a className="nav-link" href="#bookRoom">
-                                    Book Room
+                                <a className="nav-link" href="#amenity">
+                                    Amenity
                                 </a>
                             </li>
                             <li className="nav-item">
-                                <a className="nav-link" href="#amenity">
-                                    Amenity
+                                <a className="nav-link" href="#bookRoom">
+                                    Book Room
                                 </a>
                             </li>
                             <li className="nav-item">
@@ -224,137 +225,6 @@ function MainPage() {
                     </div>
                 </div>
             </nav>
-            {/* Login Modal */}
-            <div className="modal fade" id="loginModal" tabIndex="-1" aria-labelledby="loginModalLabel"
-                 aria-hidden="true">
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h5 className="modal-title" id="loginModalLabel">Login</h5>
-                            <button type="button" className="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                        </div>
-                        <div className="modal-body">
-                            <form onSubmit={handleLogin}>
-                                <div className="mb-3">
-                                    <label htmlFor="email" className="form-label">E-mail</label>
-                                    <input
-                                        type="email"
-                                        className="form-control"
-                                        id="loginEmail"
-                                        name="email"
-                                        value={loginData.email}
-                                        onChange={handleLoginChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <label htmlFor="password" className="form-label">Password</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        id="loginPassword"
-                                        name="password"
-                                        value={loginData.password}
-                                        onChange={handleLoginChange}
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className="btn btn-primary">Login</button>
-                            </form>
-                            <p className="text-center">
-                                New here?{" "}
-                                <a
-                                    href="#"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#signupModal"
-                                    data-bs-dismiss="modal"
-                                >
-                                    Sign up now
-                                </a>
-                            </p>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {/* SignUp Modal */}
-            <div className="modal fade" id="signupModal" tabIndex="-1" aria-labelledby="signupModalLabel"
-                 aria-hidden="true">
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h5 className="modal-title" id="signupModalLabel">SignUp</h5>
-                            <button type="button" className="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                        </div>
-                        <div className="modal-body">
-                            <form onSubmit={handleSignup}>
-                                <div className="mb-3">
-                                    <label htmlFor="signupUsername" className="form-label">Username</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        id="signupUsername"
-                                        name="username"
-                                        value={signupData.username}
-                                        onChange={handleSignupChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <label htmlFor="signupEmail" className="form-label">E-mail</label>
-                                    <input
-                                        type="email"
-                                        className="form-control"
-                                        id="signupEmail"
-                                        name="email"
-                                        value={signupData.email}
-                                        onChange={handleSignupChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <label htmlFor="signupPassword" className="form-label">Password</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        id="signupPassword"
-                                        name="password"
-                                        value={signupData.password}
-                                        onChange={handleSignupChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        id="confirmPassword"
-                                        name="confirmPassword"
-                                        value={signupData.confirmPassword}
-                                        onChange={handleSignupChange}
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className="btn btn-primary">SignUp</button>
-                            </form>
-                            <p className="text-center">
-                                Already have an account?{" "}
-                                <a
-                                    href="#"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#loginModal"
-                                    data-bs-dismiss="modal"
-                                >
-                                    SignIn
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
             {/* Masthead*/}
             <header className="masthead">
                 <div className="container">
@@ -415,8 +285,7 @@ function MainPage() {
                 </div>
             </section>
 
-            {/* Book Room*/}
-
+            {/*Book Room*/}
             <section className="page-section bg-light" id="bookRoom">
                 <div className="container">
                     <div className="text-center">
@@ -446,7 +315,6 @@ function MainPage() {
                                             <img
                                                 className="img-fluid"
                                                 src={testRoom_01}
-                                                // src={`../img/room/${room.id}.jpg`}
                                                 alt={room.roomName}
                                             />
                                         </a>
@@ -464,180 +332,58 @@ function MainPage() {
                 </div>
             </section>
 
-            {/*<section className="page-section bg-light" id="bookRoom">*/}
-            {/*    <div className="container">*/}
-            {/*        <div className="text-center">*/}
-            {/*            <h2 className="section-heading text-uppercase">Book Room</h2>*/}
-            {/*            <h3 className="section-subheading text-muted">*/}
-            {/*                Lorem ipsum dolor sit amet consectetur.*/}
-            {/*            </h3>*/}
-            {/*        </div>*/}
-            {/*        <div className="row">*/}
-            {/*            <div className="col-lg-4 col-sm-6 mb-4">*/}
-            {/*                /!* Room 1*!/*/}
-            {/*                <div className="room-item">*/}
-            {/*                    <a*/}
-            {/*                        className="room-link"*/}
-            {/*                        data-bs-toggle="modal"*/}
-            {/*                        href="#roomModal1"*/}
-            {/*                    >*/}
-            {/*                        <div className="room-hover">*/}
-            {/*                            <div className="room-hover-content">*/}
-            {/*                                <i className="fas fa-plus fa-3x"/>*/}
-            {/*                            </div>*/}
-            {/*                        </div>*/}
-            {/*                        <img*/}
-            {/*                            className="img-fluid"*/}
-            {/*                            src="../img/room/1.jpg"*/}
-            {/*                            alt="..."*/}
-            {/*                        />*/}
-            {/*                    </a>*/}
-            {/*                    <div className="room-caption">*/}
-            {/*                        <div className="room-caption-heading">Threads</div>*/}
-            {/*                        <div className="room-caption-subheading text-muted">*/}
-            {/*                            Illustration*/}
-            {/*                        </div>*/}
-            {/*                    </div>*/}
-            {/*                </div>*/}
-            {/*            </div>*/}
-            {/*            <div className="col-lg-4 col-sm-6 mb-4">*/}
-            {/*                /!* room item 2*!/*/}
-            {/*                <div className="room-item">*/}
-            {/*                    <a*/}
-            {/*                        className="room-link"*/}
-            {/*                        data-bs-toggle="modal"*/}
-            {/*                        href="#roomModal2"*/}
-            {/*                    >*/}
-            {/*                        <div className="room-hover">*/}
-            {/*                            <div className="room-hover-content">*/}
-            {/*                                <i className="fas fa-plus fa-3x"/>*/}
-            {/*                            </div>*/}
-            {/*                        </div>*/}
-            {/*                        <img*/}
-            {/*                            className="img-fluid"*/}
-            {/*                            src="../img/room/2.jpg"*/}
-            {/*                            alt="..."*/}
-            {/*                        />*/}
-            {/*                    </a>*/}
-            {/*                    <div className="room-caption">*/}
-            {/*                        <div className="room-caption-heading">Explore</div>*/}
-            {/*                        <div className="room-caption-subheading text-muted">*/}
-            {/*                            Graphic Design*/}
-            {/*                        </div>*/}
-            {/*                    </div>*/}
-            {/*                </div>*/}
-            {/*            </div>*/}
-            {/*            <div className="col-lg-4 col-sm-6 mb-4">*/}
-            {/*                /!* room item 3*!/*/}
-            {/*                <div className="room-item">*/}
-            {/*                    <a*/}
-            {/*                        className="room-link"*/}
-            {/*                        data-bs-toggle="modal"*/}
-            {/*                        href="#roomModal3"*/}
-            {/*                    >*/}
-            {/*                        <div className="room-hover">*/}
-            {/*                            <div className="room-hover-content">*/}
-            {/*                                <i className="fas fa-plus fa-3x"/>*/}
-            {/*                            </div>*/}
-            {/*                        </div>*/}
-            {/*                        <img*/}
-            {/*                            className="img-fluid"*/}
-            {/*                            src="../img/room/3.jpg"*/}
-            {/*                            alt="..."*/}
-            {/*                        />*/}
-            {/*                    </a>*/}
-            {/*                    <div className="room-caption">*/}
-            {/*                        <div className="room-caption-heading">Finish</div>*/}
-            {/*                        <div className="room-caption-subheading text-muted">*/}
-            {/*                            Identity*/}
-            {/*                        </div>*/}
-            {/*                    </div>*/}
-            {/*                </div>*/}
-            {/*            </div>*/}
-            {/*            <div className="col-lg-4 col-sm-6 mb-4 mb-lg-0">*/}
-            {/*                /!* room item 4*!/*/}
-            {/*                <div className="room-item">*/}
-            {/*                    <a*/}
-            {/*                        className="room-link"*/}
-            {/*                        data-bs-toggle="modal"*/}
-            {/*                        href="#roomModal4"*/}
-            {/*                    >*/}
-            {/*                        <div className="room-hover">*/}
-            {/*                            <div className="room-hover-content">*/}
-            {/*                                <i className="fas fa-plus fa-3x"/>*/}
-            {/*                            </div>*/}
-            {/*                        </div>*/}
-            {/*                        <img*/}
-            {/*                            className="img-fluid"*/}
-            {/*                            src="../img/room/4.jpg"*/}
-            {/*                            alt="..."*/}
-            {/*                        />*/}
-            {/*                    </a>*/}
-            {/*                    <div className="room-caption">*/}
-            {/*                        <div className="room-caption-heading">Lines</div>*/}
-            {/*                        <div className="room-caption-subheading text-muted">*/}
-            {/*                            Branding*/}
-            {/*                        </div>*/}
-            {/*                    </div>*/}
-            {/*                </div>*/}
-            {/*            </div>*/}
-            {/*            <div className="col-lg-4 col-sm-6 mb-4 mb-sm-0">*/}
-            {/*                /!* room item 5*!/*/}
-            {/*                <div className="room-item">*/}
-            {/*                    <a*/}
-            {/*                        className="room-link"*/}
-            {/*                        data-bs-toggle="modal"*/}
-            {/*                        href="#roomModal5"*/}
-            {/*                    >*/}
-            {/*                        <div className="room-hover">*/}
-            {/*                            <div className="room-hover-content">*/}
-            {/*                                <i className="fas fa-plus fa-3x"/>*/}
-            {/*                            </div>*/}
-            {/*                        </div>*/}
-            {/*                        <img*/}
-            {/*                            className="img-fluid"*/}
-            {/*                            src="../img/room/5.jpg"*/}
-            {/*                            alt="..."*/}
-            {/*                        />*/}
-            {/*                    </a>*/}
-            {/*                    <div className="room-caption">*/}
-            {/*                        <div className="room-caption-heading">Southwest</div>*/}
-            {/*                        <div className="room-caption-subheading text-muted">*/}
-            {/*                            Website Design*/}
-            {/*                        </div>*/}
-            {/*                    </div>*/}
-            {/*                </div>*/}
-            {/*            </div>*/}
-            {/*            <div className="col-lg-4 col-sm-6">*/}
-            {/*                /!* room item 6*!/*/}
-            {/*                <div className="room-item">*/}
-            {/*                    <a*/}
-            {/*                        className="room-link"*/}
-            {/*                        data-bs-toggle="modal"*/}
-            {/*                        href="#roomModal6"*/}
-            {/*                    >*/}
-            {/*                        <div className="room-hover">*/}
-            {/*                            <div className="room-hover-content">*/}
-            {/*                                <i className="fas fa-plus fa-3x"/>*/}
-            {/*                            </div>*/}
-            {/*                        </div>*/}
-            {/*                        <img*/}
-            {/*                            className="img-fluid"*/}
-            {/*                            src="../img/room/6.jpg"*/}
-            {/*                            alt="..."*/}
-            {/*                        />*/}
-            {/*                    </a>*/}
-            {/*                    <div className="room-caption">*/}
-            {/*                        <div className="room-caption-heading">Window</div>*/}
-            {/*                        <div className="room-caption-subheading text-muted">*/}
-            {/*                            Photography*/}
-            {/*                        </div>*/}
-            {/*                    </div>*/}
-            {/*                </div>*/}
-            {/*            </div>*/}
-            {/*        </div>*/}
-            {/*    </div>*/}
-            {/*</section>*/}
+
+            <section className="page-section bg-light" id="bookRoom">
+                <div className="container">
+                    <div className="text-center mb-5">
+                        <h2 className="section-heading text-uppercase">Book Room</h2>
+                        <h3 className="section-subheading text-muted">
+                            Lorem ipsum dolor sit amet consectetur.
+                        </h3>
+                    </div>
+                    {isLoading ? (
+                        <p>Loading...</p>
+                    ) : (
+                        <>
+                            {/* Main Room Display */}
+                            <div className="row mb-5">
+                                <div className="col-md-6">
+                                    {/*<img className="img-fluid" src={selectedRoom.image} alt={selectedRoom.roomName}/>*/}
+                                    <img className="img-fluid" src={testRoom_01} alt={selectedRoom.roomName}/>
+                                </div>
+                                <div className="col-md-6">
+                                    <h3>{selectedRoom.roomName}</h3>
+                                    <p><strong>Capacity:</strong> {roomDetails[selectedRoom.id]?.capacity} persons</p>
+                                    <p><strong>Grade:</strong> {roomDetails[selectedRoom.id]?.roomGrade}</p>
+                                    <p><strong>Price:</strong> ${roomDetails[selectedRoom.id]?.price} per night</p>
+                                    <p>{selectedRoom.description}</p>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => handleBookNow(selectedRoom.id)}
+                                    >
+                                        Book Now
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Other Rooms List */}
+                            <div className="row">
+                                <h4 className="mb-3">Other Available Rooms</h4>
+                                {rooms.map((room) => (
+                                    <div className="col-md-2 mb-4" key={room.id}>
+                                        <div className="room-item" onClick={() => handleRoomSelect(room)}>
+                                            {/*<img className="img-fluid" src={room.image} alt={room.roomName}/>*/}
+                                            <img className="img-fluid" src={testRoom_01} alt={room.roomName}/>
+                                            <div className="room-caption-heading">{room.roomName}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </section>
+
 
             {/* About*/}
             <section className="page-section" id="about">
@@ -682,7 +428,7 @@ function MainPage() {
                             </div>
                             <div className="timeline-panel">
                                 <div className="timeline-heading">
-                                    <h4>March 2011</h4>
+                                <h4>March 2011</h4>
                                     <h4 className="subheading">An Agency is Born</h4>
                                 </div>
                                 <div className="timeline-body">
@@ -1081,362 +827,259 @@ function MainPage() {
                     </div>
                 </div>
             </footer>
-            {/* room Modals*/}
-            {/* room item 1 modal popup*/}
-            <div
-                className="room-modal modal fade"
-                id="roomModal1"
-                tabIndex={-1}
-                role="dialog"
-                aria-hidden="true"
-            >
+
+            {/* Login Modal */}
+            <div className="modal fade" id="loginModal" tabIndex="-1" aria-labelledby="loginModalLabel"
+                 aria-hidden="true">
                 <div className="modal-dialog">
                     <div className="modal-content">
-                        <div className="close-modal" data-bs-dismiss="modal">
-                            {/*<img src="../img/close-icon.svg" alt="Close modal"/>*/}
-                            <img src={close_icon} alt="Close modal"/>
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="loginModalLabel">Login</h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                         </div>
-                        <div className="container">
-                            <div className="row justify-content-center">
-                                <div className="col-lg-8">
-                                    <div className="modal-body">
-                                        {/* Project details*/}
-                                        <h2 className="text-uppercase">Project Name</h2>
-                                        <p className="item-intro text-muted">
-                                            Lorem ipsum dolor sit amet consectetur.
-                                        </p>
-                                        <img
-                                            className="img-fluid d-block mx-auto"
-                                            src="../img/room/1.jpg"
-                                            alt="..."
-                                        />
-                                        <p>
-                                            Use this area to describe your project. Lorem ipsum dolor sit
-                                            amet, consectetur adipisicing elit. Est blanditiis dolorem
-                                            culpa incidunt minus dignissimos deserunt repellat aperiam
-                                            quasi sunt officia expedita beatae cupiditate, maiores
-                                            repudiandae, nostrum, reiciendis facere nemo!
-                                        </p>
-                                        <ul className="list-inline">
-                                            <li>
-                                                <strong>Client:</strong>
-                                                Threads
-                                            </li>
-                                            <li>
-                                                <strong>Category:</strong>
-                                                Illustration
-                                            </li>
-                                        </ul>
-                                        <button
-                                            className="btn btn-primary btn-xl text-uppercase"
-                                            data-bs-dismiss="modal"
-                                            type="button"
-                                        >
-                                            <i className="fas fa-xmark me-1"/>
-                                            Close Project
-                                        </button>
+                        <div className="modal-body">
+                            <form onSubmit={handleLogin}>
+                                <div className="mb-3">
+                                    <label htmlFor="email" className="form-label">E-mail</label>
+                                    <input
+                                        type="email"
+                                        className="form-control"
+                                        id="loginEmail"
+                                        name="email"
+                                        value={loginData.email}
+                                        onChange={handleLoginChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <label htmlFor="password" className="form-label">Password</label>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        id="loginPassword"
+                                        name="password"
+                                        value={loginData.password}
+                                        onChange={handleLoginChange}
+                                        required
+                                    />
+                                </div>
+                                <button type="submit" className="btn btn-primary">Login</button>
+                            </form>
+                            <p className="text-center">
+                                New here?{" "}
+                                <a
+                                    href="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#signupModal"
+                                    data-bs-dismiss="modal"
+                                >
+                                    Sign up now
+                                </a>
+                            </p>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {/* SignUp Modal */}
+            <div className="modal fade" id="signupModal" tabIndex="-1" aria-labelledby="signupModalLabel"
+                 aria-hidden="true">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="signupModalLabel">SignUp</h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div className="modal-body">
+                            <form onSubmit={handleSignup}>
+                                <div className="mb-3">
+                                    <label htmlFor="signupUsername" className="form-label">Username</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        id="signupUsername"
+                                        name="username"
+                                        value={signupData.username}
+                                        onChange={handleSignupChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <label htmlFor="signupEmail" className="form-label">E-mail</label>
+                                    <input
+                                        type="email"
+                                        className="form-control"
+                                        id="signupEmail"
+                                        name="email"
+                                        value={signupData.email}
+                                        onChange={handleSignupChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <label htmlFor="signupPassword" className="form-label">Password</label>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        id="signupPassword"
+                                        name="password"
+                                        value={signupData.password}
+                                        onChange={handleSignupChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        id="confirmPassword"
+                                        name="confirmPassword"
+                                        value={signupData.confirmPassword}
+                                        onChange={handleSignupChange}
+                                        required
+                                    />
+                                </div>
+                                <button type="submit" className="btn btn-primary">SignUp</button>
+                            </form>
+                            <p className="text-center">
+                                Already have an account?{" "}
+                                <a
+                                    href="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#loginModal"
+                                    data-bs-dismiss="modal"
+                                >
+                                    SignIn
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            {/* Room Modals */}
+            {rooms.map((room) => (
+                <div
+                    key={room.id}
+                    className="room-modal modal fade"
+                    id={`roomModal${room.id}`}
+                    tabIndex={-1}
+                    role="dialog"
+                    aria-hidden="true"
+                >
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="close-modal" data-bs-dismiss="modal">
+                                <img src={close_icon} alt="Close modal"/>
+                            </div>
+                            <div className="container">
+                                <div className="row justify-content-center">
+                                    <div className="col-lg-8">
+                                        <div className="modal-body">
+                                            <h2 className="text-uppercase">{room.roomName}</h2>
+                                            <p className="item-intro text-muted">
+                                                Room Grade: {room.roomGrade}
+                                            </p>
+                                            <img
+                                                className="img-fluid d-block mx-auto"
+                                                src={testRoom_01}
+                                                alt={room.roomName}
+                                            />
+                                            <p>
+                                                This {room.roomName} offers comfortable accommodation for up
+                                                to {room.capacity} guests.
+                                                It's a perfect choice for those seeking
+                                                a {room.roomGrade === 1 ? 'standard' : 'luxurious'} stay.
+                                            </p>
+                                            <ul className="list-inline">
+                                                <li>
+                                                    <strong>Capacity:</strong> {room.capacity} persons
+                                                </li>
+                                                <li>
+                                                    <strong>Price:</strong> ${roomDetails[room.id]?.price || 'N/A'} per night
+                                                </li>
+                                            </ul>
+                                            {/*<button*/}
+                                            {/*    className="btn btn-primary btn-xl text-uppercase"*/}
+                                            {/*    type="button"*/}
+                                            {/*    onClick={() => handleBooking(room.id)}  // 예약 처리 함수 추가 필요*/}
+                                            {/*>*/}
+                                            {/*    <i className="fas fa-check me-1"/>*/}
+                                            {/*    Book Now*/}
+                                            {/*</button>*/}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            {/* room item 2 modal popup*/}
-            <div
-                className="room-modal modal fade"
-                id="roomModal2"
-                tabIndex={-1}
-                role="dialog"
-                aria-hidden="true"
-            >
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal"/>
-                        </div>
-                        <div className="container">
-                            <div className="row justify-content-center">
-                                <div className="col-lg-8">
-                                    <div className="modal-body">
-                                        {/* Project details*/}
-                                        <h2 className="text-uppercase">Project Name</h2>
-                                        <p className="item-intro text-muted">
-                                            Lorem ipsum dolor sit amet consectetur.
-                                        </p>
-                                        <img
-                                            className="img-fluid d-block mx-auto"
-                                            src="../img/room/2.jpg"
-                                            alt="..."
-                                        />
-                                        <p>
-                                            Use this area to describe your project. Lorem ipsum dolor sit
-                                            amet, consectetur adipisicing elit. Est blanditiis dolorem
-                                            culpa incidunt minus dignissimos deserunt repellat aperiam
-                                            quasi sunt officia expedita beatae cupiditate, maiores
-                                            repudiandae, nostrum, reiciendis facere nemo!
-                                        </p>
-                                        <ul className="list-inline">
-                                            <li>
-                                                <strong>Client:</strong>
-                                                Explore
-                                            </li>
-                                            <li>
-                                                <strong>Category:</strong>
-                                                Graphic Design
-                                            </li>
-                                        </ul>
-                                        <button
-                                            className="btn btn-primary btn-xl text-uppercase"
-                                            data-bs-dismiss="modal"
-                                            type="button"
-                                        >
-                                            <i className="fas fa-xmark me-1"/>
-                                            Close Project
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {/* room item 3 modal popup*/}
-            <div
-                className="room-modal modal fade"
-                id="roomModal3"
-                tabIndex={-1}
-                role="dialog"
-                aria-hidden="true"
-            >
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal"/>
-                        </div>
-                        <div className="container">
-                            <div className="row justify-content-center">
-                                <div className="col-lg-8">
-                                    <div className="modal-body">
-                                        {/* Project details*/}
-                                        <h2 className="text-uppercase">Project Name</h2>
-                                        <p className="item-intro text-muted">
-                                            Lorem ipsum dolor sit amet consectetur.
-                                        </p>
-                                        <img
-                                            className="img-fluid d-block mx-auto"
-                                            src="../img/room/3.jpg"
-                                            alt="..."
-                                        />
-                                        <p>
-                                            Use this area to describe your project. Lorem ipsum dolor sit
-                                            amet, consectetur adipisicing elit. Est blanditiis dolorem
-                                            culpa incidunt minus dignissimos deserunt repellat aperiam
-                                            quasi sunt officia expedita beatae cupiditate, maiores
-                                            repudiandae, nostrum, reiciendis facere nemo!
-                                        </p>
-                                        <ul className="list-inline">
-                                            <li>
-                                                <strong>Client:</strong>
-                                                Finish
-                                            </li>
-                                            <li>
-                                                <strong>Category:</strong>
-                                                Identity
-                                            </li>
-                                        </ul>
-                                        <button
-                                            className="btn btn-primary btn-xl text-uppercase"
-                                            data-bs-dismiss="modal"
-                                            type="button"
-                                        >
-                                            <i className="fas fa-xmark me-1"/>
-                                            Close Project
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {/* room item 4 modal popup*/}
-            <div
-                className="room-modal modal fade"
-                id="roomModal4"
-                tabIndex={-1}
-                role="dialog"
-                aria-hidden="true"
-            >
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal"/>
-                        </div>
-                        <div className="container">
-                            <div className="row justify-content-center">
-                                <div className="col-lg-8">
-                                    <div className="modal-body">
-                                        {/* Project details*/}
-                                        <h2 className="text-uppercase">Project Name</h2>
-                                        <p className="item-intro text-muted">
-                                            Lorem ipsum dolor sit amet consectetur.
-                                        </p>
-                                        <img
-                                            className="img-fluid d-block mx-auto"
-                                            src="../img/room/4.jpg"
-                                            alt="..."
-                                        />
-                                        <p>
-                                            Use this area to describe your project. Lorem ipsum dolor sit
-                                            amet, consectetur adipisicing elit. Est blanditiis dolorem
-                                            culpa incidunt minus dignissimos deserunt repellat aperiam
-                                            quasi sunt officia expedita beatae cupiditate, maiores
-                                            repudiandae, nostrum, reiciendis facere nemo!
-                                        </p>
-                                        <ul className="list-inline">
-                                            <li>
-                                                <strong>Client:</strong>
-                                                Lines
-                                            </li>
-                                            <li>
-                                                <strong>Category:</strong>
-                                                Branding
-                                            </li>
-                                        </ul>
-                                        <button
-                                            className="btn btn-primary btn-xl text-uppercase"
-                                            data-bs-dismiss="modal"
-                                            type="button"
-                                        >
-                                            <i className="fas fa-xmark me-1"/>
-                                            Close Project
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {/* room item 5 modal popup*/}
-            <div
-                className="room-modal modal fade"
-                id="roomModal5"
-                tabIndex={-1}
-                role="dialog"
-                aria-hidden="true"
-            >
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal"/>
-                        </div>
-                        <div className="container">
-                            <div className="row justify-content-center">
-                                <div className="col-lg-8">
-                                    <div className="modal-body">
-                                        {/* Project details*/}
-                                        <h2 className="text-uppercase">Project Name</h2>
-                                        <p className="item-intro text-muted">
-                                            Lorem ipsum dolor sit amet consectetur.
-                                        </p>
-                                        <img
-                                            className="img-fluid d-block mx-auto"
-                                            src="../img/room/5.jpg"
-                                            alt="..."
-                                        />
-                                        <p>
-                                            Use this area to describe your project. Lorem ipsum dolor sit
-                                            amet, consectetur adipisicing elit. Est blanditiis dolorem
-                                            culpa incidunt minus dignissimos deserunt repellat aperiam
-                                            quasi sunt officia expedita beatae cupiditate, maiores
-                                            repudiandae, nostrum, reiciendis facere nemo!
-                                        </p>
-                                        <ul className="list-inline">
-                                            <li>
-                                                <strong>Client:</strong>
-                                                Southwest
-                                            </li>
-                                            <li>
-                                                <strong>Category:</strong>
-                                                Website Design
-                                            </li>
-                                        </ul>
-                                        <button
-                                            className="btn btn-primary btn-xl text-uppercase"
-                                            data-bs-dismiss="modal"
-                                            type="button"
-                                        >
-                                            <i className="fas fa-xmark me-1"/>
-                                            Close Project
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {/* room item 6 modal popup*/}
-            <div
-                className="room-modal modal fade"
-                id="roomModal6"
-                tabIndex={-1}
-                role="dialog"
-                aria-hidden="true"
-            >
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="close-modal" data-bs-dismiss="modal">
-                            <img src="../img/close-icon.svg" alt="Close modal"/>
-                        </div>
-                        <div className="container">
-                            <div className="row justify-content-center">
-                                <div className="col-lg-8">
-                                    <div className="modal-body">
-                                        {/* Project details*/}
-                                        <h2 className="text-uppercase">Project Name</h2>
-                                        <p className="item-intro text-muted">
-                                            Lorem ipsum dolor sit amet consectetur.
-                                        </p>
-                                        <img
-                                            className="img-fluid d-block mx-auto"
-                                            src="../img/room/6.jpg"
-                                            alt="..."
-                                        />
-                                        <p>
-                                            Use this area to describe your project. Lorem ipsum dolor sit
-                                            amet, consectetur adipisicing elit. Est blanditiis dolorem
-                                            culpa incidunt minus dignissimos deserunt repellat aperiam
-                                            quasi sunt officia expedita beatae cupiditate, maiores
-                                            repudiandae, nostrum, reiciendis facere nemo!
-                                        </p>
-                                        <ul className="list-inline">
-                                            <li>
-                                                <strong>Client:</strong>
-                                                Window
-                                            </li>
-                                            <li>
-                                                <strong>Category:</strong>
-                                                Photography
-                                            </li>
-                                        </ul>
-                                        <button
-                                            className="btn btn-primary btn-xl text-uppercase"
-                                            data-bs-dismiss="modal"
-                                            type="button"
-                                        >
-                                            <i className="fas fa-xmark me-1"/>
-                                            Close Project
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            ))}
+
+
+            {/*/!* Room Modals *!/*/}
+            {/*{rooms.map((room) => (*/}
+            {/*    <div*/}
+            {/*        key={room.id}*/}
+            {/*        className="room-modal modal fade"*/}
+            {/*        id={`roomModal${room.id}`}*/}
+            {/*        tabIndex={-1}*/}
+            {/*        role="dialog"*/}
+            {/*        aria-hidden="true"*/}
+            {/*    >*/}
+            {/*        <div className="modal-dialog">*/}
+            {/*            <div className="modal-content">*/}
+            {/*                <div className="close-modal" data-bs-dismiss="modal">*/}
+            {/*                    <img src={close_icon} alt="Close modal"/>*/}
+            {/*                </div>*/}
+            {/*                <div className="container">*/}
+            {/*                    <div className="row justify-content-center">*/}
+            {/*                        <div className="col-lg-8">*/}
+            {/*                            <div className="modal-body">*/}
+            {/*                                <h2 className="text-uppercase">{room.roomName}</h2>*/}
+            {/*                                <p className="item-intro text-muted">*/}
+            {/*                                    Room Grade: {room.roomGrade}*/}
+            {/*                                </p>*/}
+            {/*                                <img*/}
+            {/*                                    className="img-fluid d-block mx-auto"*/}
+            {/*                                    src={testRoom_01}*/}
+            {/*                                    alt={room.roomName}*/}
+            {/*                                />*/}
+            {/*                                <p>*/}
+            {/*                                    This {room.roomName} offers comfortable accommodation for up*/}
+            {/*                                    to {room.capacity} guests.*/}
+            {/*                                    It's a perfect choice for those seeking*/}
+            {/*                                    a {room.roomGrade === 1 ? 'standard' : 'luxurious'} stay.*/}
+            {/*                                </p>*/}
+            {/*                                <ul className="list-inline">*/}
+            {/*                                    <li>*/}
+            {/*                                        <strong>Capacity:</strong> {room.capacity} persons*/}
+            {/*                                    </li>*/}
+            {/*                                    <li>*/}
+            {/*                                        <strong>Price:</strong> ${roomDetails[room.id]?.price || 'N/A'} per*/}
+            {/*                                        night*/}
+            {/*                                    </li>*/}
+            {/*                                </ul>*/}
+            {/*                                <button*/}
+            {/*                                    className="btn btn-primary btn-xl text-uppercase"*/}
+            {/*                                    data-bs-dismiss="modal"*/}
+            {/*                                    type="button"*/}
+            {/*                                >*/}
+            {/*                                    <i className="fas fa-xmark me-1"/>*/}
+            {/*                                    Close Details*/}
+            {/*                                </button>*/}
+            {/*                            </div>*/}
+            {/*                        </div>*/}
+            {/*                    </div>*/}
+            {/*                </div>*/}
+            {/*            </div>*/}
+            {/*        </div>*/}
+            {/*    </div>*/}
+            {/*))}*/}
         </>
     );
 }
