@@ -2,11 +2,9 @@ package com.study.NIHo.api.room.controller;
 
 import com.study.NIHo.api.common.response.entity.ApiResponseEntity;
 import com.study.NIHo.api.reservation.application.ReservationGetService;
-import com.study.NIHo.api.reservation.dto.response.ReservationGetListResponseDTO;
 import com.study.NIHo.api.room.application.RoomGetService;
 import com.study.NIHo.api.room.dto.response.RoomDetailResponseDTO;
 import com.study.NIHo.api.room.dto.response.RoomListResponseDTO;
-import com.study.NIHo.api.room.dto.response.RoomWithReservationsDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,8 +28,6 @@ public class RoomController {
     @GetMapping("/{roomId}")
     public ResponseEntity<ApiResponseEntity> getRoom(@PathVariable long roomId) {
         RoomDetailResponseDTO roomDetail = roomGetService.getRoomDetail(roomId);
-        ReservationGetListResponseDTO reservations = reservationGetService.getReservationsFromDate(roomId);
-        RoomWithReservationsDTO combined = RoomWithReservationsDTO.of(roomDetail, reservations);
-        return ApiResponseEntity.successResponseEntity(combined);
+        return ApiResponseEntity.successResponseEntity(roomDetail);
     }
 }
