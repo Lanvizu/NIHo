@@ -1,4 +1,3 @@
-import axios from 'axios';
 import * as bootstrap from 'bootstrap';
 import '../styles/styles.css';
 
@@ -31,7 +30,7 @@ window.addEventListener('DOMContentLoaded', event => {
             target: '#mainNav',
             rootMargin: '0px 0px -40%',
         });
-    };
+    }
 
     // Collapse responsive navbar when toggler is visible
     const navbarToggler = document.body.querySelector('.navbar-toggler');
@@ -45,5 +44,4 @@ window.addEventListener('DOMContentLoaded', event => {
             }
         });
     });
-
 });
